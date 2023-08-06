@@ -6,4 +6,4 @@ class AppConfig
   final double defaultWordspacing=1.0;
 }
 
-final appConfig=new AppConfig();
+final appConfig=AppConfig();

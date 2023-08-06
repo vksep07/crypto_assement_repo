@@ -29,12 +29,7 @@ class Routes {
           settings: const RouteSettings(name: crypto_detail_screen),
           builder: (_) => CryptoDetailsScreen(cryptoModel: args),
         );
-/*
-      case chat_detail_screen:
-        return MaterialPageRoute<dynamic>(
-          settings: const RouteSettings(name: chat_detail_screen),
-          builder: (_) => ChatDetailScreen(),
-        );*/
+
       default:
         return null;
     }
