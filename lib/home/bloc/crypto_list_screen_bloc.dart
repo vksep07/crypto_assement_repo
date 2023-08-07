@@ -8,32 +8,38 @@ import 'package:crypto_assignment/home/network/model/response/crypto_list_res_mo
 import 'package:crypto_assignment/main.dart';
 import 'package:crypto_assignment/util/constants.dart';
 import 'package:crypto_assignment/util/database/database_helper.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 import 'package:rxdart/rxdart.dart';
 
 class CryptoListScreenBloc {
-
   num? _pageNumber = DEFAULT_START;
 
+  EasyRefreshController? refreshController = EasyRefreshController(
+    controlFinishRefresh: true,
+    controlFinishLoad: true,
+  );
   BehaviorSubject<List<CryptoModel>> _cryptoModelListController =
       BehaviorSubject<List<CryptoModel>>.seeded([]);
 
-  List<CryptoModel>? cryptoModelList=[];
+  List<CryptoModel>? cryptoModelList = [];
 
   BehaviorSubject<List<CryptoModel>> get cryptoModelListController =>
       _cryptoModelListController;
 
-  BehaviorSubject<bool> _loadMoreController = BehaviorSubject<bool>.seeded(false);
+  BehaviorSubject<bool> _loadMoreController =
+      BehaviorSubject<bool>.seeded(false);
 
   BehaviorSubject<bool> get loadMoreController => _loadMoreController;
 
-  BehaviorSubject<bool> _loadingController = BehaviorSubject<bool>.seeded(false);
+  BehaviorSubject<bool> _loadingController =
+      BehaviorSubject<bool>.seeded(false);
 
   BehaviorSubject<bool> get loadingController => _loadingController;
 
   Future<void> callCryptoListApi({num? pageNumber, int? limit}) async {
     AppLogger.printLog('callCryptoListApi step 1');
     if (pageNumber! > DEFAULT_START) {
-       _loadMoreController.add(true);
+      _loadMoreController.add(true);
     } else {
       _loadingController.add(true);
     }
@@ -48,7 +54,6 @@ class CryptoListScreenBloc {
       CryptoListResModel? cryptoListResModel =
           CryptoListResModel.fromJson(json.decode(resp.data.toString()));
 
-
       AppLogger.printLog('resposne - ${resp.data.toString()}');
       if (cryptoListResModel != null &&
           cryptoListResModel.data!.isEmpty &&
@@ -61,10 +66,12 @@ class CryptoListScreenBloc {
       if (pageNumber == DEFAULT_START) {
         cryptoModelList = cryptoListResModel.data!;
         _cryptoModelListController.add([]);
-        _cryptoModelListController.add(cryptoModelList??[]);
+        _cryptoModelListController.add(cryptoModelList ?? []);
       } else {
         cryptoModelList!.addAll(cryptoListResModel.data!);
         _cryptoModelListController.add(cryptoModelList ?? []);
+        AppLogger.printLog('resposne list size - ${cryptoModelList!.length}');
+
       }
       if (cryptoModelList!.isNotEmpty) {
         setCurrentPageNumber(pageNumber: getCurrentPageNumber()! + 1);
@@ -101,7 +108,6 @@ class CryptoListScreenBloc {
     favouriteScreenBloc.getFavouriteDataFromDB();
   }
 
-
   num? getCurrentPageNumber() {
     return _pageNumber;
   }
@@ -110,6 +116,13 @@ class CryptoListScreenBloc {
     _pageNumber = pageNumber;
   }
 
+  void onRefresh() async {
+    refreshController?.callRefresh();
+    cryptoListScreenBloc.setCurrentPageNumber(pageNumber: DEFAULT_START);
+    await cryptoListScreenBloc.callCryptoListApi(
+        pageNumber: DEFAULT_START, limit: DEFAULT_LIMIT);
+    refreshController?.finishRefresh();
+  }
 }
 
 final cryptoListScreenBloc = CryptoListScreenBloc();

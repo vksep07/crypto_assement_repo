@@ -11,20 +11,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crypto_assignment/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('testing listview widget', (WidgetTester tester) async {
+    // the items to add to list
+    List<String> listItems = ["item 1","item 2","item 3"];
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    //start the widget
+    await tester.pumpWidget(
+        MaterialApp(home: ListAppWidget(listItems))
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    //find all text widgets
+    List<Widget> asd = tester.widgetList(find.byType(Text)).toList();
+    int n = 0;
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    //verify
+    asd.forEach((element) {
+      expect(element.toString().contains(listItems[n]), true, reason: "Not found");
+      print(listItems[n] + " found");
+      n += 1;
+    });
   });
 }

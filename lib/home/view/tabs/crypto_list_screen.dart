@@ -14,6 +14,7 @@ import 'package:crypto_assignment/util/common_widgets/extensions.dart';
 import 'package:crypto_assignment/util/constants.dart';
 import 'package:crypto_assignment/util/string_constant.dart';
 import 'package:crypto_assignment/util/toast_util.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -25,9 +26,9 @@ class CryptoListScreen extends StatefulWidget {
 }
 
 class _CryptoListScreenState extends State<CryptoListScreen> {
-
   final ScrollController _scrollController = ScrollController();
   double _lastPosition = 0;
+
   @override
   void initState() {
     super.initState();
@@ -36,7 +37,6 @@ class _CryptoListScreenState extends State<CryptoListScreen> {
     cryptoListScreenBloc.callCryptoListApi(
         pageNumber: DEFAULT_START, limit: DEFAULT_LIMIT);
     _scrollController.addListener(checkForEnd);
-
   }
 
   @override
@@ -52,66 +52,77 @@ class _CryptoListScreenState extends State<CryptoListScreen> {
         stream: cryptoListScreenBloc.loadingController,
         builder: (context, snapshot) {
           if (snapshot.hasData && snapshot.data != null && !snapshot.data!) {
-            return Column(
-              children: [
-                Expanded(
-                  child: StreamBuilder(
-                    stream: cryptoListScreenBloc.cryptoModelListController,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data != null) {
-                        if (snapshot.data!.isNotEmpty) {
-                          return ListView.builder(
-                            controller: _scrollController,
-                              itemCount: snapshot.data!.length ?? 0,
-                              itemBuilder: (BuildContext context, int index) {
-                                CryptoModel cryptoModel = snapshot.data![index];
-                                final price = double.parse(
-                                    cryptoModel.quote!.usd!.price.toString());
-                                final priceString = price.toStringAsFixed(2);
-                                return CryptoItemWidget(
-                                  bitCoinName: cryptoModel.name,
-                                  bitCoinValue: priceString,
-                                  imageUrl:
+            return  EasyRefresh(
+                header: MaterialHeader(
+                  color: AppColors.primary,
+                ),
+                controller: cryptoListScreenBloc.refreshController,
+                onRefresh: () {
+                  cryptoListScreenBloc.onRefresh();
+                },
+                child:  Column(
+                  children: [
+                    Expanded(
+                      child: StreamBuilder(
+                        stream: cryptoListScreenBloc.cryptoModelListController,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data != null) {
+                            if (snapshot.data!.isNotEmpty) {
+                              return  ListView.builder(
+                                  controller: _scrollController,
+                                  //  physics: const NeverScrollableScrollPhysics(),
+                                  shrinkWrap: true,
+                                  itemCount: snapshot.data!.length ?? 0,
+                                  itemBuilder: (BuildContext context, int index) {
+                                    CryptoModel cryptoModel = snapshot.data![index];
+                                    final price = double.parse(
+                                        cryptoModel.quote!.usd!.price.toString());
+                                    final priceString = price.toStringAsFixed(2);
+                                    return CryptoItemWidget(
+                                      bitCoinName: cryptoModel.name,
+                                      bitCoinValue: priceString,
+                                      imageUrl:
                                       cryptoListScreenBloc.getBitCoinImageUrl(
                                           imageId: cryptoModel.id.toString()),
-                                  onClick: () {
-                                    appNavigationService.pushNamed(
-                                        Routes.crypto_detail_screen,
-                                        arguments: cryptoModel);
-                                  },
-                                );
-                              });
-                        } else {
-                          return Center(
-                            child: AppTextWidget(
-                              text: stringConstant.no_data_found,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                              size: 18,
-                            ),
-                          );
-                        }
-                      } else {
-                        return DefaultLoading();
-                      }
-                    },
-                  ),
-                ),
-                StreamBuilder<bool>(
-                    stream: cryptoListScreenBloc.loadMoreController,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data!) {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.primary,
-                          ),
-                        );
-                      }
+                                      onClick: () {
+                                        appNavigationService.pushNamed(
+                                            Routes.crypto_detail_screen,
+                                            arguments: cryptoModel);
+                                      },
+                                    );
+                                  });
+                            } else {
+                              return Center(
+                                child: AppTextWidget(
+                                  text: stringConstant.no_data_found,
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  size: 18,
+                                ),
+                              );
+                            }
+                          } else {
+                            return DefaultLoading();
+                          }
+                        },
+                      ),
+                    ),
+                    StreamBuilder<bool>(
+                        stream: cryptoListScreenBloc.loadMoreController,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData && snapshot.data!) {
+                            return Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                              ),
+                            );
+                          }
 
-                      return SizedBox();
-                    }),
-              ],
-            );
+                          return SizedBox();
+                        }),
+                  ],
+                ));
+
           }
 
           return DefaultLoading();
@@ -120,22 +131,19 @@ class _CryptoListScreenState extends State<CryptoListScreen> {
     );
   }
 
-
   checkForEnd() async {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
       _scrollController.keepScrollOffset;
       _lastPosition = _scrollController.position.pixels;
 
-
       cryptoListScreenBloc.callCryptoListApi(
-          pageNumber: cryptoListScreenBloc.getCurrentPageNumber()!,
-          limit: DEFAULT_LIMIT,
-          );
+        pageNumber: cryptoListScreenBloc.getCurrentPageNumber()!,
+        limit: DEFAULT_LIMIT,
+      );
       moveToLastIndex();
     }
   }
-
 
   moveToLastIndex() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -146,6 +154,4 @@ class _CryptoListScreenState extends State<CryptoListScreen> {
       );
     });
   }
-
 }
-
